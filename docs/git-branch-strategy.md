@@ -24,7 +24,7 @@ Example: `feat/42-sync-lww-apply`
 
 ## Merge Gates
 
-- 2 approvals minimum.
+- 1 approval minimum.
 - One approval must come from protocol/security ownership.
 - CI required.
 - Squash merge only.

@@ -39,5 +39,5 @@ Every issue must include:
 
 - Direct pushes to `main` are prohibited.
 - Merge via squash only.
-- At least 2 reviewers required (one security/protocol reviewer).
+- At least 1 reviewer required (security/protocol ownership review is recommended for protocol-impacting changes).
 - CI must pass.
