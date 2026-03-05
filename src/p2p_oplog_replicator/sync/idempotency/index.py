@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from pathlib import Path
 
+from p2p_oplog_replicator.persistence.file_backend import DurableAtomicJsonFileStore
 from p2p_oplog_replicator.sync.errors import ValidationError, ValidationErrorDetail
 
 
@@ -37,6 +39,36 @@ class EventIdempotencyIndex:
 
     def has(self, event_id: str) -> bool:
         return event_id in self._index
+
+
+class PersistentEventIdempotencyIndex(EventIdempotencyIndex):
+    """Event idempotency index persisted atomically as JSON snapshots."""
+
+    def __init__(self, path: Path) -> None:
+        super().__init__()
+        self._store = DurableAtomicJsonFileStore(path, default_payload={"records": {}})
+        self._load()
+
+    def register(self, event: dict) -> bool:
+        changed = super().register(event)
+        if changed:
+            self._store.store_json(
+                {
+                    "records": {
+                        event_id: asdict(record)
+                        for event_id, record in sorted(self._index.items())
+                    }
+                }
+            )
+        return changed
+
+    def _load(self) -> None:
+        raw = self._store.load_json().get("records", {})
+        for event_id, record in raw.items():
+            self._index[event_id] = IndexRecord(
+                event_id=str(event_id),
+                payload_hash=str(record["payload_hash"]),
+            )
 
 
 def _payload_hash(event: dict) -> str:
