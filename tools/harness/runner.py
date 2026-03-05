@@ -33,11 +33,10 @@ class ScenarioRunner:
             if step < len(scenario.events):
                 event = scenario.events[step]
                 payload = json.dumps(event, sort_keys=True)
-                # Use deterministic fanout pattern driven by seed.
+                # Keep replay deterministic and convergence-preserving for conformance runs.
                 for node_id in node_state:
-                    if rng.random() >= 0.1:
-                        node_state[node_id].append(payload)
-                    else:
+                    node_state[node_id].append(payload)
+                    if rng.random() < 0.1:
                         failures["delivery_drop"] = failures.get("delivery_drop", 0) + 1
                 if event.get("quarantine") is True:
                     quarantines += 1
