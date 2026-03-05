@@ -1,0 +1,35 @@
+# OS / desktop noise
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+tmp/
+.temp/
+
+# Environment / secrets
+.env
+.env.*
+*.local
+
+# Test / coverage outputs
+coverage/
+.nyc_output/
+
+# Runtime caches
+.cache/
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
