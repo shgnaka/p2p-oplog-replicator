@@ -1,0 +1,57 @@
+name: Task
+about: Implementable unit intended for one PR
+labels: ["type:task"]
+body:
+  - type: input
+    id: parent
+    attributes:
+      label: Parent Capability/Epic
+      placeholder: #456
+    validations:
+      required: true
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: One sentence outcome
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      placeholder: #111, #222 or N/A
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: touched_paths
+    attributes:
+      label: Touched paths
+      placeholder: One path per line
+    validations:
+      required: true
+  - type: textarea
+    id: test_ids
+    attributes:
+      label: Test IDs
+      placeholder: A-01/B-02 etc.
+    validations:
+      required: true

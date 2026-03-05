@@ -1,0 +1,55 @@
+name: Capability
+about: Mid-level deliverable under an epic
+labels: ["type:capability"]
+body:
+  - type: input
+    id: epic
+    attributes:
+      label: Parent Epic
+      placeholder: #123
+    validations:
+      required: true
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: touched_paths
+    attributes:
+      label: Touched paths
+      placeholder: One path per line
+    validations:
+      required: true
+  - type: textarea
+    id: test_ids
+    attributes:
+      label: Test IDs
+      placeholder: List related test IDs (e.g., A-01, B-02)
+    validations:
+      required: true
