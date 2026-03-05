@@ -1,0 +1,39 @@
+name: Epic
+about: Top-level deliverable grouping multiple capabilities/tasks
+labels: ["type:epic"]
+body:
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: What business/technical outcome does this epic deliver?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      placeholder: In scope items
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      placeholder: Explicit exclusions
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      placeholder: Required issues/PRs/components
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: Objective completion checks
+    validations:
+      required: true

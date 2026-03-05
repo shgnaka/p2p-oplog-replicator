@@ -1,0 +1,9 @@
+# Default ownership
+* @shgnaka
+
+# Protocol-critical surfaces require protocol/security owner review
+/docs/p2p-oplog-replicator-spec.md @shgnaka
+/docs/git-branch-strategy.md @shgnaka
+/docs/multi-agent-operating-model.md @shgnaka
+/.github/ISSUE_TEMPLATE/* @shgnaka
+/.github/workflows/* @shgnaka
