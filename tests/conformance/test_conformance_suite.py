@@ -3,10 +3,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.conformance.run_suite import build_cases, run_suite
+from tools.conformance.run_suite import GateConfig, build_cases, run_suite
 
 
 class ConformanceSuiteTests(unittest.TestCase):
+    def _default_gate(self) -> GateConfig:
+        return GateConfig(
+            min_conversion_rate=1.0,
+            max_quarantine_rate=0.20,
+            mandatory_tests={test_id for test_id, _ in build_cases()},
+        )
+
     def test_suite_has_12_cases(self):
         self.assertEqual(len(build_cases()), 12)
 
@@ -18,7 +25,7 @@ class ConformanceSuiteTests(unittest.TestCase):
     def test_run_suite_emits_required_artifacts(self):
         with tempfile.TemporaryDirectory() as td:
             output = Path(td)
-            rc = run_suite(output)
+            rc = run_suite(output, self._default_gate())
             self.assertEqual(rc, 0)
             for name in [
                 "summary.json",
@@ -35,9 +42,20 @@ class ConformanceSuiteTests(unittest.TestCase):
     def test_scenario_results_has_12_lines(self):
         with tempfile.TemporaryDirectory() as td:
             output = Path(td)
-            run_suite(output)
+            run_suite(output, self._default_gate())
             lines = (output / "scenario-results.jsonl").read_text(encoding="utf-8").strip().splitlines()
             self.assertEqual(len(lines), 12)
+
+    def test_gate_fails_when_quarantine_threshold_too_strict(self):
+        with tempfile.TemporaryDirectory() as td:
+            output = Path(td)
+            strict_gate = GateConfig(
+                min_conversion_rate=1.0,
+                max_quarantine_rate=0.0,
+                mandatory_tests={test_id for test_id, _ in build_cases()},
+            )
+            rc = run_suite(output, strict_gate)
+            self.assertEqual(rc, 1)
 
 
 if __name__ == "__main__":
