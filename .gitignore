@@ -33,3 +33,7 @@ coverage/
 *.tar
 *.tar.gz
 *.tgz
+
+# Python
+__pycache__/
+*.pyc
