@@ -61,6 +61,18 @@ class SessionManager:
     def has_session(self, peer_id: str) -> bool:
         return peer_id in self._sessions
 
+    def get_session(self, peer_id: str) -> Session:
+        return self._sessions[peer_id]
+
+    def find_by_session_id(self, session_id: str) -> Session | None:
+        for session in self._sessions.values():
+            if session.session_id == session_id:
+                return session
+        return None
+
+    def list_sessions(self) -> list[Session]:
+        return list(self._sessions.values())
+
     def _emit(self, event: SessionEvent) -> None:
         for sink in self._sinks:
             sink.on_event(event)
