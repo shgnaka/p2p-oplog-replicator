@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/p2p-oplog/quarantine-record-schema.json",
+  "title": "Quarantine Record",
+  "type": "object",
+  "required": [
+    "event_id",
+    "decision",
+    "reason_code",
+    "adapter_version",
+    "captured_at",
+    "source_peer"
+  ],
+  "properties": {
+    "event_id": { "type": "string", "minLength": 1 },
+    "decision": { "type": "string", "const": "QUARANTINE" },
+    "reason_code": { "type": "string", "minLength": 1 },
+    "adapter_version": { "type": "string", "minLength": 1 },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "source_peer": { "type": "string", "minLength": 1 },
+    "explain": { "type": "string" },
+    "event_snapshot": { "type": "object" }
+  },
+  "additionalProperties": false
+}
