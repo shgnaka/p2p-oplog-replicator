@@ -1,32 +1,22 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
+
+from p2p_oplog_replicator.persistence.file_backend import DurableJsonLineFileStore
 
 
 class AppendOnlyEventLog:
-    """Simple JSONL append-only log for validated events."""
+    """Durable append-only JSONL log for validated events."""
 
     def __init__(self, file_path: Path) -> None:
-        self._path = file_path
-        self._path.parent.mkdir(parents=True, exist_ok=True)
-        self._path.touch(exist_ok=True)
+        self._store = DurableJsonLineFileStore(file_path)
 
     def append(self, event: dict) -> int:
-        with self._path.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n")
+        self._store.append_json_line(event)
         return self.count()
 
     def read_all(self) -> list[dict]:
-        out: list[dict] = []
-        with self._path.open("r", encoding="utf-8") as fh:
-            for line in fh:
-                line = line.strip()
-                if not line:
-                    continue
-                out.append(json.loads(line))
-        return out
+        return self._store.read_json_lines()
 
     def count(self) -> int:
-        with self._path.open("r", encoding="utf-8") as fh:
-            return sum(1 for _ in fh)
+        return len(self.read_all())
