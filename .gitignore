@@ -37,3 +37,6 @@ coverage/
 # Python
 __pycache__/
 *.pyc
+
+# Local generated artifacts
+artifacts/
