@@ -36,7 +36,18 @@ jobs:
         run: PYTHONPATH=src:. python -m unittest discover -s tests -p 'test_*.py' -v
 
       - name: Run conformance suite
-        run: PYTHONPATH=src:. python tools/conformance/run_suite.py --output-dir artifacts/conformance
+        run: |
+          PYTHONPATH=src:. python tools/conformance/run_suite.py \
+            --output-dir artifacts/conformance \
+            --min-conversion-rate 1.0 \
+            --max-quarantine-rate 0.20 \
+            --mandatory-tests A-01,A-02,A-03,B-01,B-02,B-03,C-01,C-02,C-03,D-01,D-02,D-03
+
+      - name: Validate conformance artifacts
+        run: PYTHONPATH=src:. python tools/ci_artifacts/validate_contract.py --output-dir artifacts/conformance
+
+      - name: Print conformance summary
+        run: cat artifacts/conformance/summary.json
 
       - name: Upload conformance artifacts
         uses: actions/upload-artifact@v4
