@@ -16,6 +16,26 @@ class EventLogIdempotencyTests(unittest.TestCase):
             self.assertEqual(log.count(), 2)
             self.assertEqual([e["event_id"] for e in log.read_all()], ["e1", "e2"])
 
+    def test_read_slice_supports_offset_and_limit(self):
+        with tempfile.TemporaryDirectory() as td:
+            log = AppendOnlyEventLog(Path(td) / "events.jsonl")
+            for i in range(5):
+                log.append({"event_id": f"e{i}", "value": i})
+
+            window = log.read_slice(offset=1, limit=2)
+            self.assertEqual([e["event_id"] for e in window], ["e1", "e2"])
+            tail = log.read_slice(offset=3)
+            self.assertEqual([e["event_id"] for e in tail], ["e3", "e4"])
+
+    def test_read_slice_rejects_negative_offset_or_limit(self):
+        with tempfile.TemporaryDirectory() as td:
+            log = AppendOnlyEventLog(Path(td) / "events.jsonl")
+            log.append({"event_id": "e1", "value": 1})
+            with self.assertRaises(ValueError):
+                log.read_slice(offset=-1)
+            with self.assertRaises(ValueError):
+                log.read_slice(offset=0, limit=-1)
+
     def test_idempotency_duplicate_is_noop(self):
         idx = EventIdempotencyIndex()
         event = {"event_id": "e1", "payload": {"v": 1}}
