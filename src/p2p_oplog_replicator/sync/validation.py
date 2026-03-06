@@ -18,6 +18,9 @@ REQUIRED_KEYS = {
     "created_at",
 }
 
+_ALLOWED_MERGE_STRATEGIES = {"lww_tombstone"}
+_ALLOWED_COMMAND_OPS = {"set", "delete"}
+
 
 @dataclass(frozen=True)
 class ValidatedEvent:
@@ -52,10 +55,17 @@ class EventEnvelopeValidator:
                 )
             )
 
-        if not isinstance(event.get("causal"), dict) or event["causal"].get("type") != "lamport_v1":
+        if event.get("merge_strategy") not in _ALLOWED_MERGE_STRATEGIES:
             raise ValidationError(
-                ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "causal must be lamport_v1 object")
+                ValidationErrorDetail(
+                    "ERR_SCHEMA_UNKNOWN",
+                    f"unsupported merge_strategy: {event.get('merge_strategy')}",
+                )
             )
+
+        self._validate_scalar_fields(event)
+        self._validate_causal(event.get("causal"))
+        self._validate_command(event.get("command"))
 
         canonical = _canonical_signing_payload(event)
         if not self._verifier.verify(
@@ -66,6 +76,39 @@ class EventEnvelopeValidator:
             raise ValidationError(ValidationErrorDetail("ERR_SIG_INVALID", "signature verification failed"))
 
         return ValidatedEvent(event=event, canonical_payload=canonical)
+
+    @staticmethod
+    def _validate_scalar_fields(event: dict) -> None:
+        if not isinstance(event.get("event_id"), str) or not event["event_id"]:
+            raise ValidationError(ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "event_id must be non-empty string"))
+        if not isinstance(event.get("author"), str) or not event["author"]:
+            raise ValidationError(ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "author must be non-empty string"))
+        if not isinstance(event.get("created_at"), str) or not event["created_at"]:
+            raise ValidationError(ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "created_at must be non-empty string"))
+
+    @staticmethod
+    def _validate_causal(causal: object) -> None:
+        if not isinstance(causal, dict) or causal.get("type") != "lamport_v1":
+            raise ValidationError(ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "causal must be lamport_v1 object"))
+        lamport = causal.get("lamport")
+        if not isinstance(lamport, int) or lamport < 0:
+            raise ValidationError(ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "causal.lamport must be non-negative int"))
+        node_id = causal.get("node_id")
+        if not isinstance(node_id, str) or not node_id:
+            raise ValidationError(ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "causal.node_id must be non-empty string"))
+
+    @staticmethod
+    def _validate_command(command: object) -> None:
+        if not isinstance(command, dict):
+            raise ValidationError(ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "command must be object"))
+        op = command.get("op")
+        if op not in _ALLOWED_COMMAND_OPS:
+            raise ValidationError(ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "command.op must be set/delete"))
+        key = command.get("key")
+        if not isinstance(key, str) or not key:
+            raise ValidationError(ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "command.key must be non-empty string"))
+        if op == "set" and "value" not in command:
+            raise ValidationError(ValidationErrorDetail("ERR_SCHEMA_UNKNOWN", "set command must include value"))
 
 
 def _canonical_signing_payload(event: dict) -> bytes:

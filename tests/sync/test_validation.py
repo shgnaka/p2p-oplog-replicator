@@ -5,8 +5,8 @@ import unittest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from p2p_oplog_replicator.crypto.signature import Ed25519Verifier
-from p2p_oplog_replicator.sync.validation import EventEnvelopeValidator
 from p2p_oplog_replicator.sync.errors import ValidationError
+from p2p_oplog_replicator.sync.validation import EventEnvelopeValidator
 
 
 def canonical_payload(event: dict) -> bytes:
@@ -18,9 +18,7 @@ class ValidationTests(unittest.TestCase):
         private = Ed25519PrivateKey.generate()
         public = private.public_key()
         self._private = private
-        self._member_keys = {
-            "alice": base64.b64encode(public.public_bytes_raw()).decode("ascii")
-        }
+        self._member_keys = {"alice": base64.b64encode(public.public_bytes_raw()).decode("ascii")}
 
     def signed_event(self) -> dict:
         event = {
@@ -57,6 +55,30 @@ class ValidationTests(unittest.TestCase):
         with self.assertRaises(ValidationError) as err:
             validator.validate(event)
         self.assertEqual(err.exception.detail.code, "ERR_SCHEMA_UNKNOWN")
+
+    def test_invalid_causal_lamport_fails(self):
+        event = self.signed_event()
+        event["causal"]["lamport"] = -1
+        event["signature"] = base64.b64encode(self._private.sign(canonical_payload(event))).decode("ascii")
+        validator = EventEnvelopeValidator(Ed25519Verifier(self._member_keys))
+        with self.assertRaises(ValidationError):
+            validator.validate(event)
+
+    def test_invalid_command_op_fails(self):
+        event = self.signed_event()
+        event["command"]["op"] = "upsert"
+        event["signature"] = base64.b64encode(self._private.sign(canonical_payload(event))).decode("ascii")
+        validator = EventEnvelopeValidator(Ed25519Verifier(self._member_keys))
+        with self.assertRaises(ValidationError):
+            validator.validate(event)
+
+    def test_set_without_value_fails(self):
+        event = self.signed_event()
+        event["command"].pop("value")
+        event["signature"] = base64.b64encode(self._private.sign(canonical_payload(event))).decode("ascii")
+        validator = EventEnvelopeValidator(Ed25519Verifier(self._member_keys))
+        with self.assertRaises(ValidationError):
+            validator.validate(event)
 
 
 if __name__ == "__main__":
