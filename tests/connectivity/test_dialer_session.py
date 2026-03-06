@@ -79,9 +79,20 @@ class DialerSessionTests(unittest.TestCase):
         sessions.register_sink(sink)
 
         sessions.register_connected(Session(peer_id="p3", session_id="s1"))
-        sessions.disconnect("p3", reason="peer-closed")
+        disconnected = sessions.disconnect("p3", reason="peer-closed")
 
+        self.assertTrue(disconnected)
         self.assertEqual([e.event_type.value for e in sink.events], ["connected", "disconnected"])
+
+    def test_session_manager_disconnect_is_idempotent_for_missing_peer(self):
+        sessions = SessionManager()
+        sink = RecordingSink()
+        sessions.register_sink(sink)
+
+        disconnected = sessions.disconnect("unknown-peer", reason="missing")
+
+        self.assertFalse(disconnected)
+        self.assertEqual(sink.events, [])
 
 
 if __name__ == "__main__":

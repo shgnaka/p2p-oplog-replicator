@@ -33,6 +33,12 @@ class DiscoveryCoordinator:
 
     def poll(self) -> list[PeerCandidate]:
         discovered: list[PeerCandidate] = []
+        seen_peer_ids: set[str] = set()
         for provider in self._providers:
-            discovered.extend(provider.discover())
+            for candidate in provider.discover():
+                # Deduplicate by logical peer identity while preserving provider order.
+                if candidate.peer_id in seen_peer_ids:
+                    continue
+                discovered.append(candidate)
+                seen_peer_ids.add(candidate.peer_id)
         return discovered
