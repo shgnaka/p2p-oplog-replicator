@@ -29,6 +29,21 @@ class AdapterAndQuarantineTests(unittest.TestCase):
         self.assertEqual(decision.decision, "QUARANTINE")
         self.assertEqual(decision.reason_code, "Q_UNSUPPORTED_SCHEMA")
 
+    def test_quarantine_invalid_lamport_clock(self):
+        decision = LwwToCrdtAdapter().convert(make_event(causal={"lamport": -1, "node_id": "n1"}))
+        self.assertEqual(decision.decision, "QUARANTINE")
+        self.assertEqual(decision.reason_code, "Q_INVALID_CAUSAL_CLOCK")
+
+    def test_quarantine_missing_command_key(self):
+        decision = LwwToCrdtAdapter().convert(make_event(command={"op": "set", "value": "v"}))
+        self.assertEqual(decision.decision, "QUARANTINE")
+        self.assertEqual(decision.reason_code, "Q_MISSING_COMMAND_KEY")
+
+    def test_quarantine_unsupported_command_op(self):
+        decision = LwwToCrdtAdapter().convert(make_event(command={"op": "merge", "key": "k"}))
+        self.assertEqual(decision.decision, "QUARANTINE")
+        self.assertEqual(decision.reason_code, "Q_UNSUPPORTED_COMMAND_OP")
+
     def test_quarantine_store_roundtrip(self):
         with tempfile.TemporaryDirectory() as td:
             store = QuarantineStore(Path(td) / "q.jsonl")
