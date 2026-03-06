@@ -47,8 +47,10 @@ class SessionManager:
             )
         )
 
-    def disconnect(self, peer_id: str, reason: str) -> None:
-        session = self._sessions.pop(peer_id)
+    def disconnect(self, peer_id: str, reason: str) -> bool:
+        session = self._sessions.pop(peer_id, None)
+        if session is None:
+            return False
         self._emit(
             SessionEvent(
                 event_type=SessionEventType.DISCONNECTED,
@@ -57,6 +59,7 @@ class SessionManager:
                 reason=reason,
             )
         )
+        return True
 
     def has_session(self, peer_id: str) -> bool:
         return peer_id in self._sessions

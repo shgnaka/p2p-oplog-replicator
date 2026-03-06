@@ -26,6 +26,27 @@ class DiscoveryCandidateTests(unittest.TestCase):
 
         self.assertEqual([c.peer_id for c in found], ["p1", "p2"])
 
+    def test_coordinator_deduplicates_peer_id(self):
+        coordinator = DiscoveryCoordinator()
+        coordinator.register_provider(
+            StaticProvider([
+                PeerCandidate("p1", "a1", "dht"),
+                PeerCandidate("p2", "a2", "dht"),
+            ])
+        )
+        coordinator.register_provider(
+            StaticProvider([
+                PeerCandidate("p1", "a1-alt", "pex"),
+                PeerCandidate("p3", "a3", "pex"),
+            ])
+        )
+
+        found = coordinator.poll()
+
+        self.assertEqual([c.peer_id for c in found], ["p1", "p2", "p3"])
+        self.assertEqual(found[0].address, "a1")
+        self.assertEqual(found[0].source, "dht")
+
     def test_candidate_lifecycle_transitions(self):
         store = CandidateStore()
         store.upsert_discovered(PeerCandidate("p1", "127.0.0.1:1", "dht"))
