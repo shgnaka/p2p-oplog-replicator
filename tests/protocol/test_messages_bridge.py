@@ -33,6 +33,27 @@ class ProtocolBridgeTests(unittest.TestCase):
         with self.assertRaises(MalformedMessageError):
             decode_message(b'{"type":"ACK"}')
 
+    def test_request_message_limit_must_be_positive_int(self):
+        request = {
+            "type": "REQUEST",
+            "request_id": "r1",
+            "cursor": "c1",
+            "limit": 0,
+            "timestamp": "2026-03-05T00:00:00Z",
+        }
+        with self.assertRaises(MalformedMessageError):
+            encode_message(request)
+
+    def test_ack_status_is_validated(self):
+        ack = {
+            "type": "ACK",
+            "ack_for": "hello-1",
+            "status": "maybe",
+            "timestamp": "2026-03-05T00:00:00Z",
+        }
+        with self.assertRaises(MalformedMessageError):
+            encode_message(ack)
+
     def test_bridge_send_broadcast_and_incoming(self):
         sessions = SessionManager()
         sessions.register_connected(Session(peer_id="p1", session_id="s1"))
