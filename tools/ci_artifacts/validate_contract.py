@@ -45,6 +45,10 @@ def validate_artifacts(output_dir: Path) -> None:
         "mandatory_failed_test_ids",
         "gate_min_conversion_rate",
         "gate_max_quarantine_rate",
+        "total_conversion_attempts",
+        "converted_events",
+        "quarantined_events",
+        "quarantine_reason_totals",
     }
     missing_summary_keys = sorted(required_summary_keys - set(summary.keys()))
     if missing_summary_keys:
@@ -78,9 +82,30 @@ def validate_artifacts(output_dir: Path) -> None:
     if sorted(hashes.keys()) != sorted(test_ids):
         raise ArtifactValidationError("node-state-hashes keys must match scenario test_ids")
 
-    for row in _read_jsonl(output_dir / "quarantine-records.jsonl"):
+    quarantine_rows = _read_jsonl(output_dir / "quarantine-records.jsonl")
+    quarantine_reason_totals: dict[str, int] = {}
+    quarantined_events = 0
+    for row in quarantine_rows:
         if "test_id" not in row or "scenario_id" not in row:
             raise ArtifactValidationError("quarantine-records rows must include test_id and scenario_id")
+        count = int(row.get("quarantine_count", 0))
+        quarantined_events += count
+        for reason, reason_count in dict(row.get("quarantine_by_reason", {})).items():
+            quarantine_reason_totals[str(reason)] = quarantine_reason_totals.get(str(reason), 0) + int(reason_count)
+
+    scenario_conversion_attempts = sum(int(row.get("conversion_attempts", 0)) for row in scenarios)
+    scenario_converted = sum(int(row.get("converted_count", 0)) for row in scenarios)
+
+    if int(summary["total_conversion_attempts"]) != scenario_conversion_attempts:
+        raise ArtifactValidationError("summary.total_conversion_attempts inconsistent with scenario-results")
+    if int(summary["converted_events"]) != scenario_converted:
+        raise ArtifactValidationError("summary.converted_events inconsistent with scenario-results")
+    if int(summary["quarantined_events"]) != quarantined_events:
+        raise ArtifactValidationError("summary.quarantined_events inconsistent with quarantine-records")
+
+    expected_reason_totals = dict(sorted(quarantine_reason_totals.items()))
+    if dict(summary["quarantine_reason_totals"]) != expected_reason_totals:
+        raise ArtifactValidationError("summary.quarantine_reason_totals inconsistent with quarantine-records")
 
 
 def main() -> int:

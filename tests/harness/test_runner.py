@@ -34,7 +34,7 @@ class HarnessTests(unittest.TestCase):
                 "node_count": 2,
                 "network_profile": "nat",
                 "duration_steps": 1,
-                "events": [{"id": "e1", "quarantine": True}],
+                "events": [{"id": "e1", "quarantine": True, "reason_code": "Q_UNSUPPORTED_SCHEMA"}],
             }
         )
         result = ScenarioRunner().run(scenario)
@@ -49,7 +49,10 @@ class HarnessTests(unittest.TestCase):
             "success",
             "assertions",
             "final_state_hash_by_node",
+            "conversion_attempts",
+            "converted_count",
             "quarantine_count",
+            "quarantine_by_reason",
             "failure_breakdown",
         ]:
             self.assertIn(key, raw)
