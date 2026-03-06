@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.ci_artifacts.validate_contract import validate_artifacts, ArtifactValidationError
+from tools.ci_artifacts.validate_contract import ArtifactValidationError, validate_artifacts
 from tools.conformance.run_suite import GateConfig, build_cases, run_suite
 
 
@@ -36,7 +36,7 @@ class ArtifactValidatorTests(unittest.TestCase):
             out = Path(td)
             self._generate(out)
             summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))
-            summary["failed_scenarios"] = 99
+            summary["quarantined_events"] = 99
             (out / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
             with self.assertRaises(ArtifactValidationError):
                 validate_artifacts(out)

@@ -36,7 +36,12 @@ def build_cases() -> list[tuple[str, Scenario]]:
                         duration_steps=3,
                         events=[
                             {"id": f"e{idx}-1", "group": group},
-                            {"id": f"e{idx}-2", "group": group, "quarantine": group == "D" and n == 3},
+                            {
+                                "id": f"e{idx}-2",
+                                "group": group,
+                                "quarantine": group == "D" and n == 3,
+                                "reason_code": "Q_UNSUPPORTED_SCHEMA" if group == "D" and n == 3 else "",
+                            },
                             {"id": f"e{idx}-3", "group": group},
                         ],
                     ),
@@ -56,18 +61,31 @@ def run_suite(output_dir: Path, gate: GateConfig) -> int:
 
     passed = 0
     failed_test_ids: list[str] = []
+    conversion_attempts = 0
+    converted_events = 0
+    quarantined_events = 0
+    quarantine_reason_totals: dict[str, int] = {}
+
     for test_id, scenario in cases:
         result = runner.run(scenario)
         row = dataclasses.asdict(result)
         row["test_id"] = test_id
         scenario_rows.append(row)
         node_hashes[test_id] = result.final_state_hash_by_node
+
+        conversion_attempts += result.conversion_attempts
+        converted_events += result.converted_count
+        quarantined_events += result.quarantine_count
+        for reason, count in result.quarantine_by_reason.items():
+            quarantine_reason_totals[reason] = quarantine_reason_totals.get(reason, 0) + count
+
         if result.quarantine_count > 0:
             quarantine_rows.append(
                 {
                     "test_id": test_id,
                     "scenario_id": result.scenario_id,
                     "quarantine_count": result.quarantine_count,
+                    "quarantine_by_reason": result.quarantine_by_reason,
                 }
             )
         if result.success:
@@ -92,6 +110,10 @@ def run_suite(output_dir: Path, gate: GateConfig) -> int:
         "mandatory_failed_test_ids": mandatory_failed,
         "gate_min_conversion_rate": gate.min_conversion_rate,
         "gate_max_quarantine_rate": gate.max_quarantine_rate,
+        "total_conversion_attempts": conversion_attempts,
+        "converted_events": converted_events,
+        "quarantined_events": quarantined_events,
+        "quarantine_reason_totals": dict(sorted(quarantine_reason_totals.items())),
     }
 
     write_json(output_dir / "summary.json", summary)

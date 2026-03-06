@@ -38,6 +38,9 @@ class ConformanceSuiteTests(unittest.TestCase):
             summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
             self.assertEqual(summary["total_scenarios"], 12)
             self.assertEqual(summary["failed_scenarios"], 0)
+            self.assertEqual(summary["total_conversion_attempts"], 36)
+            self.assertEqual(summary["quarantined_events"], 1)
+            self.assertEqual(summary["quarantine_reason_totals"], {"Q_UNSUPPORTED_SCHEMA": 1})
 
     def test_scenario_results_has_12_lines(self):
         with tempfile.TemporaryDirectory() as td:
