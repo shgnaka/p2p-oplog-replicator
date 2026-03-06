@@ -62,6 +62,57 @@ class AdapterAndQuarantineTests(unittest.TestCase):
             self.assertEqual(len(loaded), 1)
             self.assertEqual(loaded[0].reason_code, "Q_NON_CONVERTIBLE_COMMAND")
 
+    def test_quarantine_store_reason_aggregation(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = QuarantineStore(Path(td) / "q.jsonl")
+            store.append(
+                QuarantineRecord(
+                    event_id="e1",
+                    decision="QUARANTINE",
+                    reason_code="Q_UNSUPPORTED_SCHEMA",
+                    adapter_version="adapter_v1",
+                    captured_at="2026-03-05T00:00:00Z",
+                    source_peer="p1",
+                    explain="schema",
+                    event_snapshot={"event_id": "e1"},
+                )
+            )
+            store.append(
+                QuarantineRecord(
+                    event_id="e2",
+                    decision="QUARANTINE",
+                    reason_code="Q_UNSUPPORTED_SCHEMA",
+                    adapter_version="adapter_v1",
+                    captured_at="2026-03-05T00:00:01Z",
+                    source_peer="p2",
+                    explain="schema",
+                    event_snapshot={"event_id": "e2"},
+                )
+            )
+            store.append(
+                QuarantineRecord(
+                    event_id="e3",
+                    decision="QUARANTINE",
+                    reason_code="Q_UNSUPPORTED_COMMAND_OP",
+                    adapter_version="adapter_v1",
+                    captured_at="2026-03-05T00:00:02Z",
+                    source_peer="p3",
+                    explain="op",
+                    event_snapshot={"event_id": "e3"},
+                )
+            )
+
+            self.assertEqual(store.count(), 3)
+            self.assertEqual(
+                store.count_by_reason(),
+                {
+                    "Q_UNSUPPORTED_COMMAND_OP": 1,
+                    "Q_UNSUPPORTED_SCHEMA": 2,
+                },
+            )
+            filtered = store.filter_by_reason("Q_UNSUPPORTED_SCHEMA")
+            self.assertEqual(len(filtered), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
